@@ -1,0 +1,15 @@
+#dygraph-container {
+  width: 100%;
+  height: 700px;
+}
+
+#graph-controls {
+  display: flex;
+  padding: 1rem;
+}
+#graph-controls input[type=radio],
+#graph-controls select {
+  margin-right: 1rem;
+}
+
+/*# sourceMappingURL=dashboard.css.map */

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Dashboard</title>
+	<script
+	  src="https://code.jquery.com/jquery-3.4.1.min.js"
+	  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+	  crossorigin="anonymous"></script>
+  <script type="text/javascript" src="./lib/dygraph/dygraph.min.js"></script>
+  <script type="text/javascript" src="./lib/moment.js"></script>
+  <link rel="stylesheet" href="./lib/spectre.min.css">
+  <link rel="stylesheet" type="text/css" href="./lib/dygraph/dygraph.css">
+  <link rel="stylesheet" type="text/css" href="./css/dashboard.css">
+</head>
+<body>
+
+	<!-- Load EJS variables from server -->
+	<script type="text/javascript">
+		var results = '<%- results %>'
+		results = JSON.parse(results)
+		console.log(results)
+	</script>
+
+	<script type="text/javascript" src="/js/results.js"></script>
+
+	<div id="graph-controls">
+		<form id="update-graph">
+			<label for="urls">URL</label>
+			<select id="urls" name="urls">
+				<option value="20">Homepage</option>
+				<option value="21">Visit page</option>
+				<option value="23">Discover article</option>
+				<option value="27">Dino directory A-Z letter page</option>
+				<option value="30">Dino directory single dinosaur page</option>
+				<option value="31">Endeavour 250</option>
+				<option value="32">Discover dinosaurs</option>
+				<option value="33">NHM shop</option>
+				<option value="34">Data portal</option>
+			</select>
+			<label for="strategies">Strategy</label>
+			<select id="strategies" name="strategies">
+				<option value="1">Desktop</option>
+				<option value="2">Mobile</option>
+			</select>
+			<label for="resolution">Display</label>
+			<select name="resolution" id="resolution">
+				<option value="1">Daily averages</option>
+				<option value="7">Rolling 7 day average</option>
+				<option value="30">Rolling 30 day average</option>
+			</select>
+		</form>
+		<button onclick="updateDataset();">Update graph</button>
+	</div>
+
+	<div id="dygraph-container"></div>
+
+	<pre id="json"></pre>
+
+</body>
+</html>
