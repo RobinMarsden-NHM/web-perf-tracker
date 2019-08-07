@@ -1,6 +1,21 @@
+body {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  align-content: stretch;
+}
+
+#dygraph-wrapper {
+  flex-grow: 1;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
 #dygraph-container {
-  width: 100%;
-  height: 700px;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 #graph-controls {
