@@ -37,6 +37,17 @@
 				<option value="33">NHM shop</option>
 				<option value="34">Data portal</option>
 			</select>
+			<label for="metrics">Metric</label>
+			<select name="metrics" id="metrics">
+				<option value="TTI">Time to interactive</option>
+				<option value="TFB">Time to first byte</option>
+				<option value="TSI">Speed Index</option>
+				<option value="Bytes">Bytes - total</option>
+				<option value="Scripts">Bytes - scripts</option>
+				<option value="ODCL">Observed DOM content loaded</option>
+				<option value="TFCP">Time to first contentful paint</option>
+				<option value="TFMP">Time to first meaningful paint</option>
+			</select>
 			<label for="strategies">Strategy</label>
 			<select id="strategies" name="strategies">
 				<option value="1">Desktop</option>
@@ -46,10 +57,10 @@
 			<select name="resolution" id="resolution">
 				<option value="1">Daily averages</option>
 				<option value="7">Rolling 7 day average</option>
-				<option value="30">Rolling 30 day average</option>
+				<option value="30" selected>Rolling 30 day average</option>
 			</select>
 		</form>
-		<button onclick="updateDataset();">Update graph</button>
+		<!-- <button onclick="updateDataset();">Update graph</button> -->
 	</div>
 
 	<div id="dygraph-container"></div>

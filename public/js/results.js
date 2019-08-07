@@ -6,6 +6,7 @@ function updateDataset() {
 	let data = {
 		url: getUrl(),
 		strategy: getStrategy(),
+		metric: getMetric(),
 	}
 	$.post(url, data, res => {
 		renderGraph(JSON.parse(res.results))
@@ -13,8 +14,16 @@ function updateDataset() {
 }
 
 const cutoffDate = '2019-04-29'
-let metrics = ['PSI5_time_TTI', 'WPT_time_TTI_London', 'WPT_time_TTI_California']
-
+const metrics = {
+	'TTI': ['WPT_time_TTI_London', 'WPT_time_TTI_California', 'PSI5_time_TTI'],
+	'TFB': ['WPT_time_TFB_London', 'WPT_time_TFB_California'], 
+	'TSI': ['WPT_time_TSI_London', 'WPT_time_TSI_California', 'PSI5_time_TSI'], 
+	'Bytes': ['WPT_bytes_total_London', 'WPT_bytes_total_California', 'PSI5_bytes_total'], 
+	'Scripts': ['PSI5_bytes_scripts'],
+	'ODCL': ['PSI5_time_ODCL'],
+	'TFCP': ['PSI5_time_FCP'],
+	'TFMP': ['PSI5_time_FMP'],
+}
 
 getUrl = () => {
 	return $('#urls').val()
@@ -26,6 +35,10 @@ getStrategy = () => {
 
 getResolution = () => {
 	return $('#resolution').val()
+}
+
+getMetric = () => {
+	return $('#metrics').val()
 }
 
 setMaxY = (maxYValues, resolution) => {
@@ -40,7 +53,6 @@ setMaxY = (maxYValues, resolution) => {
 				}
 			}
 			rollingAvg = rollingAvg / resolution
-			console.log(rollingAvg)
 			if(rollingAvg > rollingAvgMax) {
 				rollingAvgMax = rollingAvg
 			}
@@ -60,20 +72,21 @@ renderGraph = results => {
 	let url = getUrl()
 	let strategy = getStrategy()
 	let resolution = getResolution()
+	let metric = getMetric()
 	let headers = `date, `
 	let benchmarks = {}
 	let maxY = 0
 	let maxYValues = {}
 
-	for(let i=0; i<metrics.length; i++) {
-		benchmarks[metrics[i]] = {
+	for(let i=0; i<metrics[metric].length; i++) {
+		benchmarks[metrics[metric][i]] = {
 			sum: 0,
 			count: 0,
 			mean: 0,
 			max: 0,
 		}
-		headers += metrics[i]
-		if(i<metrics.length-1) {
+		headers += metrics[metric][i]
+		if(i<metrics[metric].length-1) {
 			headers += ', '
 		}
 	}
@@ -94,27 +107,27 @@ renderGraph = results => {
 		//	...concatenate the date of result to the csv string...
 		graphData += `${results[i].date}, `
 		//	...then iterate metrics being plotted...
-		for(let j=0; j<metrics.length; j++) {
+		for(let j=0; j<metrics[metric].length; j++) {
 			//	...get SQL table column names for mean and sd of metric...
-			let meanName = `${metrics[j]}_mean`
-			let sdName = `${metrics[j]}_sd`
+			let meanName = `${metrics[metric][j]}_mean`
+			let sdName = `${metrics[metric][j]}_sd`
 			let mean = results[i][meanName] ? results[i][meanName] : ''
 			let sd = results[i][sdName] ? results[i][sdName] : ''
-			if(results[i][meanName] > benchmarks[metrics[j]].max) {
-				benchmarks[metrics[j]].max = results[i][meanName]
+			if(results[i][meanName] > benchmarks[metrics[metric][j]].max) {
+				benchmarks[metrics[metric][j]].max = results[i][meanName]
 			}
 			//	...look up and concatenate these values to the csv string...
 			graphData += `${mean}, ${sd}`
-			if(typeof maxYValues[metrics[j]] === 'undefined') {
-				maxYValues[metrics[j]] = []
+			if(typeof maxYValues[metrics[metric][j]] === 'undefined') {
+				maxYValues[metrics[metric][j]] = []
 			}
-			maxYValues[metrics[j]].push(mean)
+			maxYValues[metrics[metric][j]].push(mean)
 			if(mean && moment(results[i].date).isBefore(moment(cutoffDate)) ) {
-				benchmarks[metrics[j]].sum += results[i][meanName]
-				benchmarks[metrics[j]].count ++
+				benchmarks[metrics[metric][j]].sum += results[i][meanName]
+				benchmarks[metrics[metric][j]].count ++
 			}
 			//	...if this is not the last metric for this date add a comma, else a newline
-			if(j<metrics.length-1) {
+			if(j<metrics[metric].length-1) {
 				graphData += ', '
 			} else {
 				graphData += '\n'
@@ -130,8 +143,6 @@ renderGraph = results => {
 		}
 	}
 
-	console.log(benchmarks)
-
 	maxY = maxY * 1.05
 
 	let title = resolution > 1 ? `Rolling ${resolution} day averages` : `Daily averages`
@@ -142,21 +153,48 @@ renderGraph = results => {
 		{
 			title: title,
 			errorBars: true,
+			sigma: 1.0,
 			rollPeriod: resolution,
 			valueRange: [0, maxY],
+			axes: {
+				y: {
+					axisLabelFormatter: v => {
+						switch(metric) {
+							case 'Bytes':
+							case 'Scripts':
+								return v / 100000 + 'mb'
+								break;
+							default:
+								return v / 1000 + 's'
+								break;
+						}
+					},
+					axisLabelWidth: 60
+				},
+			},
+			ylabel: $('#metrics option:selected').html(),
 			underlayCallback: (ctx, area, dygraph) => {
+				ctx.setLineDash([2, 1])
 				for(let property in benchmarks) {
 					if(benchmarks[property].sum) {
 						let xl = dygraph.toDomCoords(firstDate, benchmarks[property].mean)
 						let xr = dygraph.toDomCoords(lastDate, benchmarks[property].mean)
-						ctx.strokeStyle = '#D88'
+						ctx.strokeStyle = '#E66'
 						ctx.beginPath()
 						ctx.moveTo(xl[0], xl[1])
 						ctx.lineTo(xr[0], xr[1])
-						ctx.closePath();
 						ctx.stroke();
 					}
 				}
+				ctx.beginPath()
+				ctx.setLineDash([4, 2])
+				let y1 = dygraph.toDomCoords(moment(cutoffDate), 0)
+				let y2 = dygraph.toDomCoords(moment(cutoffDate), maxY)
+				ctx.strokeStyle = '#E66'
+				ctx.moveTo(y1[0], y1[1])
+				ctx.lineTo(y2[0], y2[1])
+				ctx.stroke();
+				ctx.setLineDash([])
 			}
 		}
 	)
@@ -165,4 +203,20 @@ renderGraph = results => {
 
 $(() => {
 	updateDataset();
+
+	$('#urls').on('change', () => {
+		updateDataset()
+	})
+
+	$('#metrics').on('change', () => {
+		updateDataset()
+	})
+
+	$('#strategies').on('change', () => {
+		updateDataset()
+	})
+
+	$('#resolution').on('change', () => {
+		updateDataset()
+	})
 })
